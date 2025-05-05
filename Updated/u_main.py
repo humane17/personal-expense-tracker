@@ -1,15 +1,10 @@
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from Updated import expense, user
-from database import engine, get_db
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from . import u_models, schemas
-from .utils import hash_password,verify_hash_password
-from .auth import create_access_token, get_current_user
+from fastapi import FastAPI
+from . import u_models
+from . import expense, user
+from database import engine
 
-
-app = FastAPI()
+app = FastAPI(title="Personal Expense Tracker.", 
+              description="Current Version Only Accepts Expenses Not Income.", version="0.1.0")
 
 
 #Creates tables in postgres if they don't exist.

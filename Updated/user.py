@@ -1,19 +1,44 @@
 from typing import List
 from fastapi import HTTPException, status, Depends, APIRouter, Body
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from Updated import schemas, u_models, auth, utils
+from . import schemas, u_models, auth, utils
 from database import get_db
+
 
 
 router = APIRouter(tags=["Authentication & User"])
 
-#User Login
-@router.post("/login")
-def login(user_credentials : schemas.UserLogin, db : Session = Depends(get_db)):
+#User Login For Devs
+@router.post("/login-json", include_in_schema=False)
+def login(user_credentials : schemas.UserLogin , db : Session = Depends(get_db)):
     """Returns A Access Token If Given Credentials Are Valid"""
 
     user_data = db.query(u_models.User).filter_by(email = user_credentials.email).first()
+    print(user_data)
+    print("User credentials is in /login-json flow",user_credentials)
+
+    if not user_data:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid User")
+    
+    verified = utils.verify_hash_password(user_credentials.password,user_data.hash_password)
+    
+    if not verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid Password")
+    
+    token = auth.create_access_token(data = {"id" : user_data.id, "email": user_data.email})
+    
+    return {"access_token": token, "token_type":"bearer"}
+
+#User Login For Clients
+@router.post("/login")
+def login(user_credentials : OAuth2PasswordRequestForm = Depends() , db : Session = Depends(get_db)):
+    """Returns A Access Token If Given Credentials Are Valid"""
+
+    user_data = db.query(u_models.User).filter_by(email = user_credentials.username).first()
+    print(user_data)
+    print("User credentials is in /login flow ",user_credentials)
 
     if not user_data:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid User")
@@ -73,7 +98,8 @@ def create_user(data : schemas.UserCreate, db : Session = Depends(get_db)):
 
 #Update User by Id
 @router.post("/update/user/{id}", status_code=status.HTTP_200_OK)
-def update_user_by_id(id : int, db : Session = Depends(get_db), req_body : schemas.UserCreate = Body()):
+def update_user_by_id(id : int  = Depends(auth.get_current_user), db : Session = Depends(get_db),
+                      req_body : schemas.UserCreate = Body()):
     """Updates User Password Based On Id and Email"""
 
     user = db.query(u_models.User).filter_by(id = id)
@@ -96,7 +122,7 @@ def update_user_by_id(id : int, db : Session = Depends(get_db), req_body : schem
     
 #Delete a User - Soft deletes.
 @router.delete("/delete/user/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(id : int, db : Session = Depends(get_db)):
+def delete_user(id : int = Depends(auth.get_current_user), db : Session = Depends(get_db)):
     """Soft Deletes A User Based On Given Id"""
 
     user = db.query(u_models.User).filter_by(id = id)

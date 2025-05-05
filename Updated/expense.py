@@ -1,8 +1,10 @@
-from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi import Depends, HTTPException, status, APIRouter, UploadFile
 from sqlalchemy.orm import Session
 from database import get_db
 from . auth import get_current_user
 from . import u_models, schemas
+
+import pandas as pd
 
 router = APIRouter(tags=["Expense"])
 
@@ -17,6 +19,14 @@ def get_user_expenses(user_id : str = Depends(get_current_user), db : Session = 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Invalid User OR No Expenses found.")
 
     return {"data": user_expenses}
+
+#Upload File With Expenses
+@router.post("/upload/expense")
+def upload_expense(file : UploadFile):
+    print(file)
+    return {"file_details" : f"File has name - {file.filename} and is of type {file.content_type} with size {file.size} bytes"}
+
+
 
 #Create a New Expense
 @router.post("/create/expense", status_code=status.HTTP_201_CREATED)

@@ -2,8 +2,7 @@ from datetime import date
 from unittest.mock import Base
 from fastapi import FastAPI
 from pydantic import BaseModel, EmailStr
-
-from Updated import u_models
+from . import u_models
 
 class UserCreate(BaseModel):
     email : EmailStr
