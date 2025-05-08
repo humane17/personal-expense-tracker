@@ -14,11 +14,19 @@ class CategoryEnum(Enum):
     UTILITY = "Utility"
     OTHER = "Other"
 
+    @classmethod
+    def map_values(cls):
+        return {member.value: member.name for member in cls}
+
 class PaymentMethodEnum(Enum):
     CREDIT_CARD = "Credit Card"
     DEBIT_CARD = "Debit Card"
     CASH = "Cash"
     UPI = "UPI"
+
+    @classmethod
+    def map_values(cls):
+        return {member.value: member.name for member in cls}
 
 class User(Base):
     __tablename__ = "user"
